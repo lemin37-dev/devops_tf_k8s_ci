@@ -1,0 +1,84 @@
+/* ============================================================
+   디자인 토큰 (색상 / 폰트) — 홈, 상세 페이지 공용
+   ============================================================ */
+:root {
+  --bg: #FFFFFF;
+  --card: #FFFFFF;
+  --ink: #222222;
+  --sub: #999999;       /* 보조 글자색 (설명, 재고 텍스트 등 톤 다운용) */
+  --line: #EEEEEE;      /* 구분선/테두리 색, 썸네일 로딩 전 배경색으로도 사용 */
+  --sale: #FF2D6E;      /* 세일 강조색 (뱃지, 로고, 버튼 배경) */
+  --sale-deep: #D81B5E; /* --sale보다 진한 톤. 텍스트(할인가, 재고부족 등)에 사용 */
+  --gold: #FFB800;
+  --teal: #1a1a1a;      /* 구매 성공 메시지 글자색 */
+  --teal-soft: #FFE6EF; /* 구매 성공 메시지 배경색 */
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: 'Inter', -apple-system, "Malgun Gothic", sans-serif;
+}
+
+a { color: inherit; text-decoration: none; }
+button { font-family: inherit; border: none; background: none; cursor: pointer; }
+
+/* 콘텐츠 최대 너비를 잡고 가운데 정렬하는 공통 컨테이너. 헤더/카운트다운/본문에서 반복 사용 */
+.wrap { max-width: 900px; margin: 0 auto; padding: 0 20px; }
+
+/* ---------------- 남은시간 카운트다운 (검정 박스) ---------------- */
+.countdown-section { border-bottom: 1px solid var(--line); }
+.countdown-section .wrap {
+  display: flex; align-items: center; justify-content: center;
+  gap: 10px; height: 56px; font-size: 14px;
+}
+.countdown-section .label { font-weight: 600; margin-right: 4px; }
+.countdown-section .box { /* 일/시/분/초 박스 (index.html의 #cd-days 등) */
+  display: inline-block; min-width: 32px; padding: 4px 7px;
+  background: #1a1a1a; color: #fff;
+  font-family: 'JetBrains Mono', monospace; font-weight: 700;
+  text-align: center; border-radius: 4px;
+}
+.countdown-section .colon { font-weight: 700; }
+
+/* ---------------- 헤더 ---------------- */
+.site-header { background: var(--card); border-bottom: 1px solid var(--line); }
+.site-header .wrap { display: flex; align-items: center; justify-content: space-between; height: 64px; }
+.logo { display: flex; align-items: center; gap: 8px; font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 20px; }
+.logo .mark { width: 26px; height: 26px; background: var(--sale); border-radius: 6px; display: flex; align-items: center; justify-content: center; color: #fff; }
+
+/* ---------------- 상품 썸네일 (js/products.js의 renderThumb()이 만듦) ---------------- */
+.thumb {
+  position: relative;       /* SALE 뱃지를 absolute로 배치하기 위한 기준점 */
+  overflow: hidden;
+  background: var(--line);  /* 이미지 로딩 전/실패 시 보이는 배경색 */
+}
+.thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.badge-sale {
+  position: absolute; top: 8px; left: 8px;
+  background: var(--sale); color: #fff; font-size: 11px; font-weight: 700;
+  padding: 2px 6px; border-radius: 4px;
+}
+
+/* ---------------- 가격 표시 (원가/할인가/할인율) ---------------- */
+/* onSale인 상품만 origin(원가, 취소선)과 percent(할인율 뱃지)가 같이 렌더링됨.
+   product.html의 .price-line-lg가 이 클래스들을 재사용하며 폰트만 키움. */
+.price-line { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.price-origin { color: var(--sub); font-size: 13px; text-decoration: line-through; }
+.price-sale { font-family: 'Space Grotesk', sans-serif; font-weight: 700; color: var(--sale-deep); }
+.price-percent {
+  background: var(--sale); color: #fff; font-size: 11px; font-weight: 700;
+  padding: 1px 6px; border-radius: 4px;
+}
+
+/* ---------------- 재고 뱃지 ---------------- */
+/* js에서 stock 값에 따라 .low(5개 이하) / .out(0개) 클래스를 조건부로 붙임 */
+.stock-badge { font-size: 12px; color: var(--sub); }
+.stock-badge.low { color: var(--sale-deep); font-weight: 600; background: #FFF1EE; padding: 2px 8px; border-radius: 4px; }
+.stock-badge.out { color: var(--sub); background: #F3F4F6; padding: 2px 8px; border-radius: 4px; }
+
+/* ---------------- 별점 ---------------- */
+.rating { font-size: 12px; color: var(--sub); display: flex; align-items: center; gap: 3px; }
+.rating svg { fill: var(--gold); }

@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>InsightOps — 타임세일 홈</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<link rel="stylesheet" href="css/style.css" />
+<style>
+  /* 홈 화면 전용 스타일 */
+  .hero {
+    background: linear-gradient(120deg, #ffffff 0%, #f2f3f5 100%);
+    position: relative;
+    overflow: hidden;
+    border-bottom: 1px solid var(--line);
+  }
+  .hero .wrap { padding-top: 40px; padding-bottom: 40px; }
+  .hero .eyebrow { font-size: 12px; font-weight: 600; color: #666; margin-bottom: 10px; }
+  .hero h1 { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 30px; color: var(--ink); line-height: 1.25; }
+  .hero p { margin-top: 8px; font-size: 13px; color: #777; }
+
+  .section-title { display: flex; justify-content: space-between; align-items: baseline; margin: 40px 0 14px; }
+  .section-title h2 { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 20px; }
+  .section-title span { font-size: 12px; color: var(--sub); }
+
+  .product-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+  .product-card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; display: block; }
+  .product-card .thumb { width: 100%; }
+  .product-card .info { padding: 12px; }
+  .product-card .category { font-size: 11px; color: var(--sub); margin-bottom: 4px; }
+  .product-card .name {
+    font-size: 13.5px; font-weight: 600; margin-bottom: 6px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; /* 이름이 길면 "..."으로 줄임 */
+  }
+  .product-card .meta-row { display: flex; justify-content: space-between; align-items: center; margin-top: 6px; }
+
+  @media (max-width: 720px) {
+    .product-grid { grid-template-columns: repeat(2, 1fr); }
+    .hero h1 { font-size: 24px; }
+  }
+</style>
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="wrap">
+      <a class="logo" href="index.html">
+        <span class="mark">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+        </span>
+        InsightOps
+      </a>
+    </div>
+  </header>
+
+  <!-- TODO(백엔드 연동): 문구를 GET /timesale/status 응답으로 대체 -->
+  <section class="hero">
+    <div class="wrap">
+      <span class="eyebrow">여름맞이 패션 특별전</span>
+      <h1>여름패션 최대 50% 할인</h1>
+      <p>카운트다운이 끝나면 할인이 시작돼요. 재고 소진 시 조기 마감될 수 있어요.</p>
+    </div>
+  </section>
+
+  <section class="countdown-section" id="countdown-section">
+    <div class="wrap">
+      <span class="label">세일 시작까지</span>
+      <span class="box" id="cd-days">00일</span>
+      <span class="box" id="cd-hours">00</span>
+      <span class="colon">:</span>
+      <span class="box" id="cd-minutes">00</span>
+      <span class="colon">:</span>
+      <span class="box" id="cd-seconds">00</span>
+    </div>
+  </section>
+
+  <main class="wrap">
+
+    <div class="section-title">
+      <h2>지금 타임세일 중</h2>
+      <span id="sale-count"></span>
+    </div>
+    <div class="product-grid" id="sale-grid"></div>
+
+    <div class="section-title">
+      <h2>전체 상품</h2>
+    </div>
+    <div class="product-grid" id="all-grid" style="margin-bottom: 60px;"></div>
+
+  </main>
+
+  <script src="js/products.js"></script>
+  <script>
+    /* ---------------- 카운트다운 (세일 시작까지) ---------------- */
+    // SALE_START, saleStarted(), pad()는 products.js에 공용으로 정의됨
+    // (상세 페이지 구매버튼 잠금/해제도 같은 SALE_START 기준)
+    let countdownTimer;
+
+    // 매초 SALE_START까지 남은 시간을 박스 4개(일/시/분/초)에 반영.
+    // 0이 되면 타이머를 멈추고 "세일 시작" 안내로 교체함
+    // → 이 순간이 트래픽이 몰리는 시점 (오토스케일링 테스트 기준점).
+    function tick() {
+      const diff = SALE_START - new Date();
+      if (diff <= 0) {
+        clearInterval(countdownTimer);
+        document.getElementById("countdown-section").innerHTML =
+          '<div class="wrap"><span class="label">🔥 세일이 시작됐어요! 지금 바로 구매해보세요</span></div>';
+        return;
+      }
+      const d = Math.floor(diff / 86400000);
+      const h = Math.floor((diff % 86400000) / 3600000);
+      const m = Math.floor((diff % 3600000) / 60000);
+      const s = Math.floor((diff % 60000) / 1000);
+      document.getElementById("cd-days").textContent = d + "일";
+      document.getElementById("cd-hours").textContent = pad(h);
+      document.getElementById("cd-minutes").textContent = pad(m);
+      document.getElementById("cd-seconds").textContent = pad(s);
+    }
+    tick();
+    countdownTimer = setInterval(tick, 1000);
+
+    /* ---------------- 상품 카드 렌더링 ---------------- */
+    // 상품 하나를 클릭 가능한 카드 HTML로 변환 (카드 전체가 <a>라서 클릭하면 상세페이지로 이동)
+    function cardHTML(p) {
+      return `
+        <a class="product-card" href="product.html?id=${p.id}">
+          ${renderThumb(p, 140)}
+          <div class="info">
+            <div class="category">${p.category}</div>
+            <div class="name">${p.name}</div>
+            <div class="price-line">
+              ${p.onSale ? `<span class="price-origin">${won(p.price)}</span>` : ""}
+              <span class="price-sale">${won(p.onSale ? p.salePrice : p.price)}</span>
+              ${p.onSale ? `<span class="price-percent">-${Math.round((1 - p.salePrice / p.price) * 100)}%</span>` : ""}
+            </div>
+            <div class="meta-row">
+              <span class="rating">
+                <svg width="11" height="11" viewBox="0 0 24 24"><path d="M12 2l3.1 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8 5.8 21l1.2-6.8-5-4.9 6.9-1z"/></svg>
+                ${p.rating}
+              </span>
+              ${
+                p.stock === 0
+                  ? '<span class="stock-badge out">품절</span>'
+                  : p.stock <= 5
+                    ? `<span class="stock-badge low">재고 ${p.stock}개 남음</span>`
+                    : `<span class="stock-badge">재고 ${p.stock}개</span>`
+              }
+            </div>
+          </div>
+        </a>`;
+    }
+
+    // TODO(백엔드 연동): PRODUCTS가 fetch 결과로 바뀌면, 이 아래 렌더링 코드도
+    // 응답이 도착한 뒤(비동기)에 실행되도록 구조를 옮겨야 함.
+    const saleItems = PRODUCTS.filter(p => p.onSale);
+    document.getElementById("sale-count").textContent = `${saleItems.length}개 상품`;
+    document.getElementById("sale-grid").innerHTML = saleItems.map(cardHTML).join("");
+    document.getElementById("all-grid").innerHTML = PRODUCTS.map(cardHTML).join("");
+  </script>
+
+</body>
+</html>

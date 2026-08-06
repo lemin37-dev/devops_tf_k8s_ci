@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>InsightOps — 상품 상세</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<link rel="stylesheet" href="css/style.css" />
+<style>
+  /* 상세 페이지 전용 스타일 */
+  .back-link { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--sub); margin: 24px 0 16px; }
+
+  .detail-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; }
+  .detail-layout .thumb { width: 100%; height: 320px; border-radius: 12px; border: 1px solid var(--line); }
+
+  .category-label { font-size: 12px; color: var(--sub); margin-bottom: 6px; }
+  h1.product-title { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 26px; }
+  .rating-row { margin: 6px 0 20px; font-size: 13px; color: var(--sub); display: flex; align-items: center; gap: 4px; }
+  .rating-row svg { fill: var(--gold); }
+
+  /* style.css의 .price-line 클래스를 재사용하되 폰트만 크게 */
+  .price-line-lg { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  .price-line-lg .price-origin { font-size: 15px; }
+  .price-line-lg .price-sale { font-size: 30px; }
+  .price-line-lg .price-percent { font-size: 13px; }
+
+  .stock-row { margin: 10px 0 0; }
+
+  .qty-row { display: flex; align-items: center; gap: 12px; margin-top: 24px; }
+  .qty-control { display: flex; align-items: center; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+  .qty-control button { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; }
+  .qty-control span { width: 40px; text-align: center; font-family: 'JetBrains Mono', monospace; font-weight: 600; }
+
+  .buy-btn {
+    margin-top: 24px; width: 100%; padding: 14px; border-radius: 8px;
+    background: var(--sale); color: #fff; font-weight: 700; font-size: 14px;
+  }
+  .buy-btn:disabled { background: #D1D5DB; cursor: not-allowed; }
+
+  .result-msg { margin-top: 12px; padding: 10px 12px; border-radius: 8px; font-size: 13px; display: none; }
+  .result-msg.ok { background: var(--teal-soft); color: var(--teal); display: flex; }
+  .result-msg.fail { background: #FFF1EE; color: var(--sale-deep); display: flex; }
+
+  @media (max-width: 720px) {
+    .detail-layout { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="wrap">
+      <a class="logo" href="index.html">
+        <span class="mark">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+        </span>
+        InsightOps
+      </a>
+    </div>
+  </header>
+
+  <main class="wrap" style="max-width: 960px;">
+
+    <a class="back-link" href="index.html">← 목록으로</a>
+
+    <div class="detail-layout" id="detail-layout" style="margin-bottom: 60px;"></div>
+
+  </main>
+
+  <script src="js/products.js"></script>
+  <script>
+    // TODO(백엔드 연동): PRODUCTS.find 대신 GET /products/{id} 호출로 교체.
+    // id가 없거나 잘못됐으면 PRODUCTS의 첫 번째 상품으로 대체(fallback).
+    const params = new URLSearchParams(location.search);
+    const productId = Number(params.get("id")) || PRODUCTS[0].id;
+    const product = PRODUCTS.find(p => p.id === productId) || PRODUCTS[0];
+
+    let qty = 1;
+    let saleTimer; // 세일 시작 전일 때 구매버튼 문구를 매초 갱신하는 타이머
+
+    // 상품 사진 + 정보(이름/가격/재고/수량/구매버튼)를 통째로 다시 그림.
+    // 구매 완료 후, 또는 세일이 막 시작된 순간에 다시 호출해서 화면을 갱신한다.
+    function renderDetail() {
+      const salePrice = product.onSale ? product.salePrice : null;
+      const soldOut = product.stock === 0;
+      // 타임세일 상품(onSale)만 시작 시각 잠금이 걸림. 일반 상품은 항상 구매 가능.
+      const started = product.onSale ? saleStarted() : true;
+      document.getElementById("detail-layout").innerHTML = `
+        ${renderThumb(product, 320)}
+        <div>
+          <div class="category-label">${product.category}</div>
+          <h1 class="product-title">${product.name}</h1>
+          <div class="rating-row">
+            <svg width="13" height="13" viewBox="0 0 24 24"><path d="M12 2l3.1 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8 5.8 21l1.2-6.8-5-4.9 6.9-1z"/></svg>
+            ${product.rating}
+          </div>
+          <div class="price-line-lg">
+            ${salePrice ? `<span class="price-origin">${won(product.price)}</span>` : ""}
+            <span class="price-sale">${won(salePrice || product.price)}</span>
+            ${salePrice ? `<span class="price-percent">-${Math.round((1 - salePrice / product.price) * 100)}%</span>` : ""}
+          </div>
+          <div class="stock-row">
+            ${
+              product.stock === 0
+                ? '<span class="stock-badge out">품절</span>'
+                : product.stock <= 5
+                  ? `<span class="stock-badge low">재고 ${product.stock}개 남음</span>`
+                  : `<span class="stock-badge">재고 ${product.stock}개</span>`
+            }
+          </div>
+
+          <div class="qty-row">
+            <span>수량</span>
+            <div class="qty-control">
+              <button id="qty-minus">−</button>
+              <span id="qty-val">${qty}</span>
+              <button id="qty-plus">+</button>
+            </div>
+          </div>
+
+          <!-- 품절/세일 시작 전이면 버튼 비활성화. 시작 전엔 saleTick()이 매초 남은시간을 갱신 -->
+          <button class="buy-btn" id="buy-btn" ${(soldOut || !started) ? "disabled" : ""}>
+            ${
+              soldOut
+                ? "품절된 상품"
+                : !started
+                  ? `${formatCountdown(SALE_START - new Date())} 후 구매 가능`
+                  : won((salePrice || product.price) * qty) + " 결제하기"
+            }
+          </button>
+
+          <div class="result-msg" id="result-msg"></div>
+        </div>
+      `;
+
+      // innerHTML로 새로 그렸기 때문에 버튼 이벤트도 매번 다시 연결
+      document.getElementById("qty-minus").onclick = () => { qty = Math.max(1, qty - 1); updateQty(); };
+      document.getElementById("qty-plus").onclick = () => { qty = Math.min(99, qty + 1); updateQty(); };
+      document.getElementById("buy-btn").onclick = handleBuy;
+
+      // 세일 시작 전이면 매초 남은시간을 갱신하다가, 시작 시각이 되면 renderDetail()을
+      // 다시 호출해서 버튼을 정상 구매 상태로 전환함 → 이 순간이 트래픽 몰림 시점.
+      clearInterval(saleTimer);
+      if (!soldOut && !started) {
+        saleTimer = setInterval(saleTick, 1000);
+      }
+    }
+
+    function saleTick() {
+      if (saleStarted()) {
+        renderDetail();
+        return;
+      }
+      const btn = document.getElementById("buy-btn");
+      if (btn) btn.textContent = `${formatCountdown(SALE_START - new Date())} 후 구매 가능`;
+    }
+
+    // 수량만 바뀌었을 때는 전체를 다시 그리지 않고 텍스트/버튼 금액만 갱신.
+    // 품절·세일 시작 전 상태에서는 버튼 문구를 건드리지 않음 (가격 문구로 덮어써지는 걸 방지).
+    function updateQty() {
+      document.getElementById("qty-val").textContent = qty;
+      if (product.stock === 0 || (product.onSale && !saleStarted())) return;
+      const salePrice = product.onSale ? product.salePrice : null;
+      document.getElementById("buy-btn").textContent = won((salePrice || product.price) * qty) + " 결제하기";
+    }
+
+    // TODO(백엔드 연동): 아래 재고 차감(product.stock -= qty)을 지우고 POST /orders 호출로
+    // 교체할 것. 서버 응답(success/out_of_stock)에 따라 성공/실패 메시지를 분기하면 됨.
+    // 지금은 프론트 메모리에서만 차감하는 시뮬레이션이라 새로고침하면 재고가 원상복구됨.
+    function handleBuy() {
+      const msg = document.getElementById("result-msg");
+      if (product.onSale && !saleStarted()) {
+        msg.className = "result-msg fail";
+        msg.textContent = "아직 세일이 시작되지 않았어요.";
+        return;
+      }
+      if (product.stock <= 0) {
+        msg.className = "result-msg fail";
+        msg.textContent = "이미 품절된 상품이에요.";
+        return;
+      }
+      if (qty > product.stock) {
+        msg.className = "result-msg fail";
+        msg.textContent = `재고가 부족해요. 남은 수량 ${product.stock}개.`;
+        return;
+      }
+      product.stock -= qty;
+      msg.className = "result-msg ok";
+      msg.textContent = `${qty}개 구매가 완료됐어요.`;
+      renderDetail();
+    }
+
+    renderDetail();
+  </script>
+
+</body>
+</html>
