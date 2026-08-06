@@ -27,6 +27,7 @@ def product_page():
 def health() -> dict[str, str]:
     return {"status": "ok"}
 
+
 # | 서비스      | URL                                                            |
 # | ---------- | -------------------------------------------------------------- |
 # | FastAPI    | [http://localhost:8000](http://localhost:8000)                 |
