@@ -1,5 +1,5 @@
-aws_region   = "ap-northeast-2"
-project_name = "de-ai-25-eks-auto"
+aws_region   = "ap-northeast-1"
+project_name = "de-ai-19-devops-tf-eks-auto"
 environment  = "dev"
 
 kubernetes_version = "1.35"
@@ -17,10 +17,10 @@ db_allocated_storage = 20
 # GitHub Actions CI
 # ------------------------------------------------------------
 enable_github_actions_ci = true
-github_owner             = ""
-github_ci_repository     = ""
-github_ci_branch         = ""
-create_github_oidc_provider = true
+github_owner             = "lemin37-dev"            # Github reoo owner
+github_ci_repository     = "devops_tf_k8s_ci"       # Github repo title
+github_ci_branch         = "main"                   # ECR push 인증 허가할 branch
+create_github_oidc_provider = true                  # 최초일때는 true, 만약 2번 이상 수행일 경우 false
 # 조회발급
-github_owner_id         = ""
-github_ci_repository_id = ""
+github_owner_id         = "298081278"
+github_ci_repository_id = "1324585084"
