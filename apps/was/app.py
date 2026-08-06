@@ -24,8 +24,8 @@ def product_page():
     return FileResponse("frontend/product.html")
 
 @app.get("/health")
-def health():
-    return {"status": "OK"}
+def health() -> dict[str, str]:
+    return {"status": "ok"}
 
 # | 서비스      | URL                                                            |
 # | ---------- | -------------------------------------------------------------- |
