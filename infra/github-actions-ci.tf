@@ -51,7 +51,7 @@ data "aws_iam_policy_document" "github_actions_ci_assume" {
 
     # AWS서비스가 아니라 외부 인증기관을 신뢰
     principals {
-      type = "Federated"
+      type        = "Federated"
       identifiers = [local.github_actions_oidc_provider_arn]
     }
     # 조건 : 다른 서비스용 토큰 발급 거부
@@ -64,7 +64,7 @@ data "aws_iam_policy_document" "github_actions_ci_assume" {
     condition {
       test     = "StringEquals"
       variable = "token.actions.githubusercontent.com:sub"
-      values = [local.github_actions_ci_subject]
+      values   = [local.github_actions_ci_subject]
     }
   }
 }
@@ -76,13 +76,13 @@ data "aws_iam_policy_document" "github_actions_ci_assume" {
 resource "aws_iam_role" "github_actions_ci" {
   count = var.enable_github_actions_ci ? 1 : 0
 
-  name = "${local.cluster_name}-github-actions-ci-role"
+  name        = "${local.cluster_name}-github-actions-ci-role"
   description = "GitHub Actions CI role for ECR image push"
   # 앞서 만든 신뢰정책을 IAM Role에 연결
   assume_role_policy = data.aws_iam_policy_document.github_actions_ci_assume[0].json
   # Role 유지 시간 (second)
   max_session_duration = 3600
-  depends_on = [aws_iam_openid_connect_provider.github_actions]
+  depends_on           = [aws_iam_openid_connect_provider.github_actions]
 }
 
 data "aws_iam_policy_document" "github_actions_ci" {
@@ -90,9 +90,9 @@ data "aws_iam_policy_document" "github_actions_ci" {
 
   # OIDC 인증서, repo 정보가 일치하는 유저의 ECR Login 허가
   statement {
-    sid    = "ECRLogin"
-    effect = "Allow"
-    actions = ["ecr:GetAuthorizationToken"]
+    sid       = "ECRLogin"
+    effect    = "Allow"
+    actions   = ["ecr:GetAuthorizationToken"]
     resources = ["*"]
   }
 
@@ -101,14 +101,14 @@ data "aws_iam_policy_document" "github_actions_ci" {
     sid    = "PushApplicationImages"
     effect = "Allow"
     actions = [
-      "ecr:BatchCheckLayerAvailability",    # 동일 이미지 레이어 체크
-      "ecr:BatchGetImage",                  # 기존 이미지 조회
-      "ecr:CompleteLayerUpload",            # 이미지 업로드 완료
-      "ecr:DescribeImages",                 # 등록된 이미지와 태그 조회
-      "ecr:GetDownloadUrlForLayer",         # 이미지 다운로드
-      "ecr:InitiateLayerUpload",            # 초기 이미지 업로드
-      "ecr:PutImage",                       # 이미지 매니페스트, 태그 등록
-      "ecr:UploadLayerPart"                 # 이미지 부분 단위로 업로드
+      "ecr:BatchCheckLayerAvailability", # 동일 이미지 레이어 체크
+      "ecr:BatchGetImage",               # 기존 이미지 조회
+      "ecr:CompleteLayerUpload",         # 이미지 업로드 완료
+      "ecr:DescribeImages",              # 등록된 이미지와 태그 조회
+      "ecr:GetDownloadUrlForLayer",      # 이미지 다운로드
+      "ecr:InitiateLayerUpload",         # 초기 이미지 업로드
+      "ecr:PutImage",                    # 이미지 매니페스트, 태그 등록
+      "ecr:UploadLayerPart"              # 이미지 부분 단위로 업로드
     ]
 
     # 특정 ECR 이미지에 대해서만 허가
@@ -121,8 +121,8 @@ data "aws_iam_policy_document" "github_actions_ci" {
 
 # IAM Role에 ECR 정책 추가 연결
 resource "aws_iam_role_policy" "github_actions_ci" {
-  count = var.enable_github_actions_ci ? 1 : 0
-  name = "${local.cluster_name}-ecr-push-policy"
-  role = aws_iam_role.github_actions_ci[0].id
+  count  = var.enable_github_actions_ci ? 1 : 0
+  name   = "${local.cluster_name}-ecr-push-policy"
+  role   = aws_iam_role.github_actions_ci[0].id
   policy = data.aws_iam_policy_document.github_actions_ci[0].json
 }

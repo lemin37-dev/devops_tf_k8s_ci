@@ -70,7 +70,7 @@
   ```
 
 
-  #
+  # 세팅
   ## OIDC 처리(AWS 인증 방식 변경)
   - 절차
     - 기존 : pem(액세스키)
@@ -113,3 +113,14 @@
         # ID 조회
         gh api repos/lemin37-dev/devops_tf_k8s_ci --jq "{owner_id: .owner.id, repository_id: .id, created_at: .created_at}"
         ```
+
+## 전체 인프라 구성 및 최초 web/was 이미지 빌드 -> ECR push : ci workflow 진행
+- 최초 (인프라 구성)
+    ```
+    .\project.sh|bat deploy
+    ```
+
+- ci setup 1회 진행
+    ```
+    .\setup-ci.sh|bat lemin37-dev/devops_tf_k8s_ci
+    ```
