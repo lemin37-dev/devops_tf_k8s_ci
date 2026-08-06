@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
-from prometheus_fastapi_instrumentator import Instrumentator
+#from prometheus_fastapi_instrumentator import Instrumentator
 
 app = FastAPI()
 
@@ -13,7 +13,7 @@ app.mount("/frontend", StaticFiles(directory="frontend"), name="frontend")
 # fastapi GET /metircs 구성
 # instrument(app) : Fastapi의 모든 요청을 가로채서(metrics 수집) - middleware 같은 역할
 # expose(app) : /metrics 엔드포인트를 구성
-Instrumentator().instrument(app).expose(app)
+#Instrumentator().instrument(app).expose(app)
 
 @app.get("/")
 def home():
