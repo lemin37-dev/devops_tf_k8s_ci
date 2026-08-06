@@ -3,8 +3,8 @@ set -Eeuo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 INFRA_DIR="${ROOT_DIR}/infra"
-WEB_IMAGE="tf-k8s-web:ci-test"
-WAS_IMAGE="tf-k8s-was:ci-test"
+WEB_IMAGE="tf-k8s-web:ci-test-1"
+WAS_IMAGE="tf-k8s-was:ci-test-1"
 WEB_CONTAINER="tf-k8s-web-ci-${RANDOM}"
 WAS_CONTAINER="tf-k8s-was-ci-${RANDOM}"
 
